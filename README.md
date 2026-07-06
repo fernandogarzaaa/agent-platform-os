@@ -9,15 +9,29 @@ The root repository does not duplicate service business logic. Each service rema
 independent Python package under `services/*`, while this repository owns the runtime contract
 that lets them operate together.
 
+## Completion Boundary
+
+This repository is complete as the root Agent Platform OS control plane. It includes the typed
+root package, environment contract, service catalog, bootstrap automation, container launcher,
+Docker Compose fabric, health verification suite, CI workflow, tests, and operations
+documentation.
+
+The five runtime services are intentionally maintained as separate repositories. They are cloned
+into `services/*` for local or deployment assembly by running:
+
+```bash
+uv run python scripts/bootstrap_services.py
+```
+
 ## Coordinated Services
 
 | Service | Repository | Runtime Role |
 | --- | --- | --- |
-| `async_mcp_gateway` | `fernandogarzaaa/async-mcp-gateway` | Zero-trust MCP/LLM ingress, rate limiting, provider failover, and streaming safety. |
-| `hydra_engine` | `fernandogarzaaa/hydra-engine` | Durable PostgreSQL-backed execution with crash replay for agent steps. |
-| `synapse_mesh` | `fernandogarzaaa/SynapseMesh` | Semantic model and capability routing with policy-aware fallback. |
-| `swarm_bus` | `fernandogarzaaa/swarm-bus` | Redis Streams event bus with atomic task locking and loop isolation. |
-| `spatial_flux` | `fernandogarzaaa/Spatial-Flux` | Edge video ingestion and structural-drift-triggered cloud VLA routing. |
+| `async_mcp_gateway` | [`fernandogarzaaa/async-mcp-gateway`](https://github.com/fernandogarzaaa/async-mcp-gateway) | Zero-trust MCP/LLM ingress, rate limiting, provider failover, and streaming safety. |
+| `hydra_engine` | [`fernandogarzaaa/hydra-engine`](https://github.com/fernandogarzaaa/hydra-engine) | Durable PostgreSQL-backed execution with crash replay for agent steps. |
+| `synapse_mesh` | [`fernandogarzaaa/SynapseMesh`](https://github.com/fernandogarzaaa/SynapseMesh) | Semantic model and capability routing with policy-aware fallback. |
+| `swarm_bus` | [`fernandogarzaaa/swarm-bus`](https://github.com/fernandogarzaaa/swarm-bus) | Redis Streams event bus with atomic task locking and loop isolation. |
+| `spatial_flux` | [`fernandogarzaaa/Spatial-Flux`](https://github.com/fernandogarzaaa/Spatial-Flux) | Edge video ingestion and structural-drift-triggered cloud VLA routing. |
 
 ## Architecture
 
