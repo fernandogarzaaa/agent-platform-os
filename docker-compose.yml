@@ -1,5 +1,3 @@
-version: "3.8"
-
 x-platform-service: &platform_service
   build:
     context: .
