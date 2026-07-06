@@ -106,6 +106,7 @@ agent-platform-os/
 ├── scripts/
 │   ├── bootstrap_services.py   # clone or fast-forward service repos
 │   ├── check_health.py         # async platform health verifier
+│   ├── install.py              # one-command root and service installer
 │   └── run_service.py          # container service launcher
 ├── tests/                      # root package and health target tests
 ├── .github/workflows/ci.yml    # CI validation gate
@@ -125,7 +126,34 @@ services/swarm_bus
 services/spatial_flux
 ```
 
-## Bootstrap
+## One-Line Install
+
+For a fresh machine with Python and Git installed, run one of these commands from the directory
+where you want the platform folder created.
+
+PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/fernandogarzaaa/agent-platform-os/main/scripts/install.py | python -
+```
+
+macOS or Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fernandogarzaaa/agent-platform-os/main/scripts/install.py | python3 -
+```
+
+The installer clones or updates the root repository at `agent-platform-os`, creates `.env` from
+`.env.example` when it does not already exist, clones all five required service repositories
+under `services/*`, and runs `uv sync --extra dev` when `uv` is available.
+
+To update an existing installation:
+
+```bash
+python scripts/install.py --update
+```
+
+## Manual Bootstrap
 
 Install root dependencies:
 
