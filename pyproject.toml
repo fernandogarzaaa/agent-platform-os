@@ -1,6 +1,6 @@
 [project]
 name = "agent-platform-os"
-version = "1.0.0"
+version = "1.0.1"
 description = "Production AI-OS Control Plane workspace for secure ingress, durable execution, model routing, event coordination, and edge perception."
 requires-python = ">=3.11,<3.14"
 authors = [
