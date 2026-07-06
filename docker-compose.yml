@@ -1,0 +1,208 @@
+version: "3.8"
+
+x-platform-service: &platform_service
+  build:
+    context: .
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  networks:
+    - platform_fabric
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp
+  environment:
+    POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
+    REDIS_STREAM_URL: redis://redis_broker:6379/0
+    OPENAI_API_URL: ${OPENAI_API_URL:-https://api.openai.com/v1}
+    ANTHROPIC_API_URL: ${ANTHROPIC_API_URL:-https://api.anthropic.com}
+    COMPLIANCE_MODE: ${COMPLIANCE_MODE:-standard}
+    CRITERIA_FALLBACK_MODE: ${CRITERIA_FALLBACK_MODE:-cost_weighted}
+    HYDRA_STATE_SCHEMA: ${HYDRA_STATE_SCHEMA:-hydra_state}
+    EVENT_REPLAY_RETRY_LIMIT: ${EVENT_REPLAY_RETRY_LIMIT:-5}
+    SWARMBUS_LOOP_DEPTH_LIMIT: ${SWARMBUS_LOOP_DEPTH_LIMIT:-32}
+    LOCK_LEASE_TTL_MS: ${LOCK_LEASE_TTL_MS:-30000}
+    EDGE_DRIFT_THRESHOLD: ${EDGE_DRIFT_THRESHOLD:-0.15}
+    IMCODEC_QUALITY_RATIO: ${IMCODEC_QUALITY_RATIO:-80}
+  volumes:
+    - uv_cache:/var/cache/uv
+
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks:
+      - platform_fabric
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: agent_platform
+      POSTGRES_PASSWORD: agent_platform
+      POSTGRES_DB: agent_platform_os
+    volumes:
+      - postgres_prime_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_platform -d agent_platform_os"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  redis_broker:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    networks:
+      - platform_fabric
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis_stream_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+
+  async_mcp_gateway:
+    <<: *platform_service
+    container_name: agent_platform_async_mcp_gateway
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+      redis_broker:
+        condition: service_healthy
+    volumes:
+      - uv_cache:/var/cache/uv
+      - ./services/async_mcp_gateway:/workspace:rw
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      SERVICE_NAME: async_mcp_gateway
+      SERVICE_DIR: /workspace
+      PORT: 8080
+      GATEWAY_PORT: ${GATEWAY_PORT:-8080}
+      MAX_TOKENS_PER_MIN: ${MAX_TOKENS_PER_MIN:-120000}
+      COMPLIANCE_MODE: ${COMPLIANCE_MODE:-standard}
+      POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
+      REDIS_STREAM_URL: redis://redis_broker:6379/0
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  hydra_engine:
+    <<: *platform_service
+    container_name: agent_platform_hydra_engine
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+      redis_broker:
+        condition: service_healthy
+    volumes:
+      - uv_cache:/var/cache/uv
+      - ./services/hydra_engine:/workspace:rw
+    ports:
+      - "${HYDRA_PORT:-8081}:8081"
+    environment:
+      SERVICE_NAME: hydra_engine
+      SERVICE_DIR: /workspace
+      PORT: 8081
+      HYDRA_STATE_SCHEMA: ${HYDRA_STATE_SCHEMA:-hydra_state}
+      EVENT_REPLAY_RETRY_LIMIT: ${EVENT_REPLAY_RETRY_LIMIT:-5}
+      POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
+      REDIS_STREAM_URL: redis://redis_broker:6379/0
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health', timeout=2)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  synapse_mesh:
+    <<: *platform_service
+    container_name: agent_platform_synapse_mesh
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    volumes:
+      - uv_cache:/var/cache/uv
+      - ./services/synapse_mesh:/workspace:rw
+    ports:
+      - "${SYNAPSE_PORT:-8082}:8082"
+    environment:
+      SERVICE_NAME: synapse_mesh
+      SERVICE_DIR: /workspace
+      PORT: 8082
+      OPENAI_API_URL: ${OPENAI_API_URL:-https://api.openai.com/v1}
+      ANTHROPIC_API_URL: ${ANTHROPIC_API_URL:-https://api.anthropic.com}
+      CRITERIA_FALLBACK_MODE: ${CRITERIA_FALLBACK_MODE:-cost_weighted}
+      POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8082/health', timeout=2)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  swarm_bus:
+    <<: *platform_service
+    container_name: agent_platform_swarm_bus
+    depends_on:
+      redis_broker:
+        condition: service_healthy
+    volumes:
+      - uv_cache:/var/cache/uv
+      - ./services/swarm_bus:/workspace:rw
+    ports:
+      - "${SWARMBUS_PORT:-8083}:8083"
+    environment:
+      SERVICE_NAME: swarm_bus
+      SERVICE_DIR: /workspace
+      PORT: 8083
+      SWARMBUS_LOOP_DEPTH_LIMIT: ${SWARMBUS_LOOP_DEPTH_LIMIT:-32}
+      LOCK_LEASE_TTL_MS: ${LOCK_LEASE_TTL_MS:-30000}
+      REDIS_STREAM_URL: redis://redis_broker:6379/0
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8083/health', timeout=2)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  spatial_flux:
+    <<: *platform_service
+    container_name: agent_platform_spatial_flux
+    volumes:
+      - uv_cache:/var/cache/uv
+      - ./services/spatial_flux:/workspace:rw
+    ports:
+      - "${SPATIAL_FLUX_PORT:-8084}:8084"
+    environment:
+      SERVICE_NAME: spatial_flux
+      SERVICE_DIR: /workspace
+      PORT: 8084
+      EDGE_DRIFT_THRESHOLD: ${EDGE_DRIFT_THRESHOLD:-0.15}
+      IMCODEC_QUALITY_RATIO: ${IMCODEC_QUALITY_RATIO:-80}
+      CLOUD_VLA_ENDPOINT_URL: ${CLOUD_VLA_ENDPOINT_URL:-http://synapse_mesh:8082/v1/vla/commands}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8084/v1/spatial/telemetry', timeout=2)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+networks:
+  platform_fabric:
+    name: platform_fabric
+    driver: bridge
+
+volumes:
+  postgres_prime_data:
+  redis_stream_data:
+  uv_cache:
