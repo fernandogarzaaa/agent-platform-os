@@ -90,6 +90,13 @@ def exec_uvicorn(service_dir: Path, app_module: str, port: int) -> None:
     os.execvp(args[0], args)
 
 
+def exec_module(service_dir: Path, module_name: str) -> None:
+    """Replace this process with a Python module running inside the service env."""
+    args = ["uv", "run", "python", "-m", module_name]
+    os.chdir(service_dir)
+    os.execvp(args[0], args)
+
+
 def main() -> None:
     """Validate, sync, and launch the configured service."""
     service_name = os.environ.get("SERVICE_NAME")
@@ -102,6 +109,9 @@ def main() -> None:
         require_service_directory(service_dir)
         apply_environment_aliases(service_name, definition.port)
         sync_dependencies(service_dir)
+        if os.environ.get("SERVICE_PROCESS") == "worker":
+            worker_module = os.environ.get("SERVICE_WORKER_MODULE", "app.worker_main")
+            exec_module(service_dir=service_dir, module_name=worker_module)
         exec_uvicorn(
             service_dir=service_dir,
             app_module=os.environ.get("SERVICE_APP_MODULE", definition.app_module),

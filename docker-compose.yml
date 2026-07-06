@@ -87,6 +87,21 @@ services:
       COMPLIANCE_MODE: ${COMPLIANCE_MODE:-standard}
       POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
       REDIS_STREAM_URL: redis://redis_broker:6379/0
+      OPENAI__API_KEY: ${OPENAI__API_KEY:-}
+      OPENAI__BASE_URL: ${OPENAI__BASE_URL:-https://api.openai.com}
+      OPENAI__CHAT_PATH: ${OPENAI__CHAT_PATH:-/v1/chat/completions}
+      OPENAI__STREAM_PATH: ${OPENAI__STREAM_PATH:-/v1/chat/completions}
+      OPENAI__DEFAULT_MODEL: ${OPENAI__DEFAULT_MODEL:-gpt-4o-mini}
+      ANTHROPIC__API_KEY: ${ANTHROPIC__API_KEY:-}
+      ANTHROPIC__BASE_URL: ${ANTHROPIC__BASE_URL:-https://api.anthropic.com}
+      ANTHROPIC__CHAT_PATH: ${ANTHROPIC__CHAT_PATH:-/v1/messages}
+      ANTHROPIC__STREAM_PATH: ${ANTHROPIC__STREAM_PATH:-/v1/messages}
+      ANTHROPIC__DEFAULT_MODEL: ${ANTHROPIC__DEFAULT_MODEL:-claude-3-5-haiku-latest}
+      LOCAL__API_KEY: ${LOCAL__API_KEY:-}
+      LOCAL__BASE_URL: ${LOCAL__BASE_URL:-http://host.docker.internal:3000}
+      LOCAL__CHAT_PATH: ${LOCAL__CHAT_PATH:-/v1/chat/completions}
+      LOCAL__STREAM_PATH: ${LOCAL__STREAM_PATH:-/v1/chat/completions}
+      LOCAL__DEFAULT_MODEL: ${LOCAL__DEFAULT_MODEL:-local-fallback}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=2)\""]
       interval: 20s
@@ -115,12 +130,42 @@ services:
       EVENT_REPLAY_RETRY_LIMIT: ${EVENT_REPLAY_RETRY_LIMIT:-5}
       POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
       REDIS_STREAM_URL: redis://redis_broker:6379/0
+      HYDRA_USE_GATEWAY_MODEL: ${HYDRA_USE_GATEWAY_MODEL:-false}
+      HYDRA_GATEWAY_URL: ${HYDRA_GATEWAY_URL:-http://async_mcp_gateway:8080/v1/chat/completions}
+      HYDRA_GATEWAY_TENANT_ID: ${HYDRA_GATEWAY_TENANT_ID:-tenant-alpha}
+      HYDRA_GATEWAY_BEARER_TOKEN: ${HYDRA_GATEWAY_BEARER_TOKEN:-alpha-secret-token}
+      HYDRA_GATEWAY_MODEL: ${HYDRA_GATEWAY_MODEL:-gpt-4o-mini}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/docs', timeout=2)\""]
       interval: 20s
       timeout: 5s
       retries: 6
       start_period: 30s
+
+  hydra_engine_worker:
+    <<: *platform_service
+    container_name: agent_platform_hydra_engine_worker
+    depends_on:
+      hydra_engine:
+        condition: service_healthy
+      redis_broker:
+        condition: service_healthy
+    volumes:
+      - uv_cache:/var/cache/uv
+      - ./services/hydra_engine:/workspace:rw
+    environment:
+      SERVICE_NAME: hydra_engine
+      SERVICE_PROCESS: worker
+      SERVICE_DIR: /workspace
+      HYDRA_STATE_SCHEMA: ${HYDRA_STATE_SCHEMA:-hydra_state}
+      EVENT_REPLAY_RETRY_LIMIT: ${EVENT_REPLAY_RETRY_LIMIT:-5}
+      POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
+      REDIS_STREAM_URL: redis://redis_broker:6379/0
+      HYDRA_USE_GATEWAY_MODEL: ${HYDRA_USE_GATEWAY_MODEL:-false}
+      HYDRA_GATEWAY_URL: ${HYDRA_GATEWAY_URL:-http://async_mcp_gateway:8080/v1/chat/completions}
+      HYDRA_GATEWAY_TENANT_ID: ${HYDRA_GATEWAY_TENANT_ID:-tenant-alpha}
+      HYDRA_GATEWAY_BEARER_TOKEN: ${HYDRA_GATEWAY_BEARER_TOKEN:-alpha-secret-token}
+      HYDRA_GATEWAY_MODEL: ${HYDRA_GATEWAY_MODEL:-gpt-4o-mini}
 
   synapse_mesh:
     <<: *platform_service
