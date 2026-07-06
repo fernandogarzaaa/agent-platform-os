@@ -31,10 +31,12 @@ def apply_environment_aliases(service_name: str, port: int) -> None:
     postgres_url = os.environ.get("POSTGRES_PRIME_URL")
     redis_url = os.environ.get("REDIS_STREAM_URL")
     if postgres_url:
-        os.environ.setdefault("DATABASE_URL", postgres_url)
+        async_postgres_url = postgres_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        os.environ.setdefault("DATABASE_URL", async_postgres_url)
         os.environ.setdefault("POSTGRES_URL", postgres_url)
     if redis_url:
         os.environ.setdefault("REDIS_URL", redis_url)
+        os.environ.setdefault("REDIS_URI", redis_url)
 
     if service_name == "spatial_flux":
         os.environ.setdefault(

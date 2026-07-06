@@ -7,7 +7,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from agent_platform_os.catalog import SERVICE_DEFINITIONS, ServiceDefinition
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from agent_platform_os.catalog import SERVICE_DEFINITIONS, ServiceDefinition  # noqa: E402
 
 
 def run_command(command: list[str], cwd: Path | None = None) -> None:

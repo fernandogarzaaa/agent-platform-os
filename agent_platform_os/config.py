@@ -23,7 +23,7 @@ class PlatformSettings(BaseSettings):
     GATEWAY_PORT: int = Field(default=8080, ge=1, le=65535)
     HYDRA_PORT: int = Field(default=8081, ge=1, le=65535)
     SYNAPSE_PORT: int = Field(default=8082, ge=1, le=65535)
-    SWARMBUS_PORT: int = Field(default=8083, ge=1, le=65535)
+    SWARMBUS_PORT: int = Field(default=8085, ge=1, le=65535)
     SPATIAL_FLUX_PORT: int = Field(default=8084, ge=1, le=65535)
     MAX_TOKENS_PER_MIN: int = Field(default=120000, ge=1)
     COMPLIANCE_MODE: str = Field(default="standard")

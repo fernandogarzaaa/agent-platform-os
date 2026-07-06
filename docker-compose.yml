@@ -88,7 +88,7 @@ services:
       POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
       REDIS_STREAM_URL: redis://redis_broker:6379/0
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=2)\""]
       interval: 20s
       timeout: 5s
       retries: 6
@@ -116,7 +116,7 @@ services:
       POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
       REDIS_STREAM_URL: redis://redis_broker:6379/0
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health', timeout=2)\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/docs', timeout=2)\""]
       interval: 20s
       timeout: 5s
       retries: 6
@@ -142,7 +142,7 @@ services:
       CRITERIA_FALLBACK_MODE: ${CRITERIA_FALLBACK_MODE:-cost_weighted}
       POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8082/health', timeout=2)\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8082/healthz', timeout=2)\""]
       interval: 20s
       timeout: 5s
       retries: 6
@@ -158,7 +158,7 @@ services:
       - uv_cache:/var/cache/uv
       - ./services/swarm_bus:/workspace:rw
     ports:
-      - "${SWARMBUS_PORT:-8083}:8083"
+      - "${SWARMBUS_PORT:-8085}:8083"
     environment:
       SERVICE_NAME: swarm_bus
       SERVICE_DIR: /workspace
@@ -167,7 +167,7 @@ services:
       LOCK_LEASE_TTL_MS: ${LOCK_LEASE_TTL_MS:-30000}
       REDIS_STREAM_URL: redis://redis_broker:6379/0
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8083/health', timeout=2)\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8083/docs', timeout=2)\""]
       interval: 20s
       timeout: 5s
       retries: 6

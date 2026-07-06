@@ -210,7 +210,7 @@ with a clear error instead of idling.
 | `async_mcp_gateway` | `8080` | `async_mcp_gateway` |
 | `hydra_engine` | `8081` | `hydra_engine` |
 | `synapse_mesh` | `8082` | `synapse_mesh` |
-| `swarm_bus` | `8083` | `swarm_bus` |
+| `swarm_bus` | `8085` | `swarm_bus` |
 | `spatial_flux` | `8084` | `spatial_flux` |
 
 ## Validation Commands

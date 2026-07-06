@@ -5,9 +5,14 @@ from __future__ import annotations
 import asyncio
 import sys
 from enum import Enum
+from pathlib import Path
 
-from agent_platform_os.config import PlatformSettings
-from agent_platform_os.health import HealthResult, check_all
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from agent_platform_os.config import PlatformSettings  # noqa: E402
+from agent_platform_os.health import HealthResult, check_all  # noqa: E402
 
 
 class Ansi(str, Enum):

@@ -49,7 +49,10 @@ def host_port_from_url(value: str, default_port: int) -> tuple[str, int]:
     parsed = urlparse(value)
     if parsed.hostname is None:
         raise ValueError(f"URL does not contain a hostname: {value}")
-    return parsed.hostname, parsed.port or default_port
+    host = parsed.hostname
+    if host in {"postgres_db", "redis_broker"}:
+        host = "127.0.0.1"
+    return host, parsed.port or default_port
 
 
 def build_targets(settings: PlatformSettings) -> list[HealthTarget]:
