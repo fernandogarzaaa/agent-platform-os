@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -15,7 +15,7 @@ from agent_platform_os.config import PlatformSettings  # noqa: E402
 from agent_platform_os.health import HealthResult, check_all  # noqa: E402
 
 
-class Ansi(str, Enum):
+class Ansi(StrEnum):
     """ANSI terminal colors used by the structured console reporter."""
 
     GREEN = "\033[92m"

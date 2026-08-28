@@ -6,7 +6,7 @@ import asyncio
 import socket
 import time
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from urllib.parse import urlparse
 
 import httpx
@@ -15,7 +15,7 @@ from agent_platform_os.catalog import SERVICE_DEFINITIONS
 from agent_platform_os.config import PlatformSettings
 
 
-class TargetKind(str, Enum):
+class TargetKind(StrEnum):
     """Supported health target protocols."""
 
     TCP = "tcp"
