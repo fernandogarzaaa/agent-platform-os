@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import os
+import pwd
 import subprocess
 import sys
 from pathlib import Path
 
 from agent_platform_os.catalog import get_service
+
+PLATFORM_USER = "platform"
 
 
 def require_service_directory(path: Path) -> None:
@@ -19,6 +22,32 @@ def require_service_directory(path: Path) -> None:
     if not (path / "app" / "main.py").exists():
         entrypoint = path / "app" / "main.py"
         raise FileNotFoundError(f"service FastAPI entrypoint is missing: {entrypoint}")
+
+
+def drop_privileges_after_reconciling_ownership(service_dir: Path) -> None:
+    """Fix bind-mounted directory ownership as root, then drop to the platform user.
+
+    The image builds its baked-in /workspace as platform:platform, but a real
+    deployment bind-mounts a service checkout from the host (via
+    scripts/bootstrap_services.py) over that path, which arrives owned by
+    whatever host user ran the clone -- not the container's fixed uid. If we
+    started directly as that non-root user, `uv sync` couldn't write a .venv
+    into a directory it doesn't own. So the container now starts as root,
+    reconciles ownership of the mount, and only then drops privileges --
+    matching the ownership-fix-then-setuid pattern common to official images
+    with bind-mounted data directories (e.g. postgres, mysql).
+    """
+    if os.getuid() != 0:
+        return
+    platform_user = pwd.getpwnam(PLATFORM_USER)
+    uid, gid = platform_user.pw_uid, platform_user.pw_gid
+    cache_dir = Path(os.environ.get("UV_CACHE_DIR", "/var/cache/uv"))
+    for path in (service_dir, cache_dir):
+        if path.exists():
+            run_checked(["chown", "-R", f"{uid}:{gid}", str(path)], cwd=Path("/"))
+    os.environ["HOME"] = platform_user.pw_dir
+    os.setgid(gid)
+    os.setuid(uid)
 
 
 def apply_environment_aliases(service_name: str, port: int) -> None:
@@ -107,6 +136,7 @@ def main() -> None:
         definition = get_service(service_name)
         service_dir = Path(os.environ.get("SERVICE_DIR", "/workspace")).resolve()
         require_service_directory(service_dir)
+        drop_privileges_after_reconciling_ownership(service_dir)
         apply_environment_aliases(service_name, definition.port)
         sync_dependencies(service_dir)
         if os.environ.get("SERVICE_PROCESS") == "worker":
