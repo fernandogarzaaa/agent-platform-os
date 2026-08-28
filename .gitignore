@@ -13,3 +13,10 @@ build/
 *.egg-info/
 services/
 uv.lock
+
+# Local-only build overrides for environments with an egress proxy that
+# re-terminates TLS (e.g. a sandboxed CI/dev container) — never commit a
+# proxy CA cert or a Dockerfile/compose override that trusts one.
+docker-compose.override.yml
+Dockerfile.*-build
+*ca-bundle*.crt
