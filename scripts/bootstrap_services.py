@@ -1,8 +1,13 @@
-"""Clone or update the five Agent Platform OS service repositories."""
+"""Clone or update the five Agent Platform OS service repositories.
+
+Each checkout is pinned to the ref in the service catalog (a commit SHA by
+default). Override one with ``<SERVICE_NAME>_REF``, e.g. ``SWARM_BUS_REF=main``.
+"""
 
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -22,26 +27,56 @@ def run_command(command: list[str], cwd: Path | None = None) -> None:
         raise RuntimeError(f"command failed with exit code {completed.returncode}: {joined}")
 
 
+def service_ref(service: ServiceDefinition) -> str:
+    """Return the git ref to check out: env override, else the catalog pin."""
+    override = os.environ.get(f"{service.name.upper()}_REF", "").strip()
+    return override or service.ref
+
+
+def ref_exists(target: Path, ref: str) -> bool:
+    """True when ``ref`` resolves to a commit in the checkout."""
+    completed = subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
+        cwd=target,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return completed.returncode == 0
+
+
+def checkout_ref(target: Path, ref: str) -> None:
+    """Check out ``ref`` detached; branch names resolve to ``origin/<branch>``."""
+    if ref.startswith("-"):
+        raise ValueError(f"invalid git ref {ref!r}")
+    remote_branch = f"origin/{ref}"
+    resolved = remote_branch if ref_exists(target, remote_branch) else ref
+    run_command(["git", "checkout", "--quiet", "--detach", resolved], cwd=target)
+
+
 def clone_service(root: Path, service: ServiceDefinition) -> None:
-    """Clone a service repository into its expected workspace path."""
+    """Clone a service repository and check out its pinned ref."""
     target = root / service.checkout_path
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
         print(f"service_exists name={service.name} path={target}")
         return
+    ref = service_ref(service)
     run_command(["git", "clone", service.repository, str(target)])
-    print(f"service_cloned name={service.name} path={target}")
+    checkout_ref(target, ref)
+    print(f"service_cloned name={service.name} path={target} ref={ref}")
 
 
 def update_service(root: Path, service: ServiceDefinition) -> None:
-    """Fast-forward an existing service checkout."""
+    """Fetch an existing service checkout and move it to its pinned ref."""
     target = root / service.checkout_path
     if not target.exists():
         clone_service(root, service)
         return
-    run_command(["git", "fetch", "--prune", "origin"], cwd=target)
-    run_command(["git", "pull", "--ff-only"], cwd=target)
-    print(f"service_updated name={service.name} path={target}")
+    ref = service_ref(service)
+    run_command(["git", "fetch", "--prune", "--tags", "origin"], cwd=target)
+    checkout_ref(target, ref)
+    print(f"service_updated name={service.name} path={target} ref={ref}")
 
 
 def selected_services(names: list[str]) -> list[ServiceDefinition]:
@@ -66,7 +101,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--update",
         action="store_true",
-        help="Fetch and fast-forward existing service checkouts.",
+        help="Fetch existing service checkouts and move them to their pinned refs.",
     )
     parser.add_argument(
         "services",

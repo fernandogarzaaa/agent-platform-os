@@ -121,6 +121,12 @@ Clone all five services:
 uv run python scripts/bootstrap_services.py
 ```
 
+Each service is checked out at the commit pinned in `agent_platform_os/catalog.py` (`ref=`), so a
+deployment is reproducible and a new push to a service repo is not picked up until the pin is
+bumped. `--update` fetches and moves existing checkouts to their pinned refs. To deploy a different
+ref for one service, set `<SERVICE_NAME>_REF` (a commit, tag, or branch), e.g.
+`SWARM_BUS_REF=main uv run python scripts/bootstrap_services.py --update swarm_bus`.
+
 Start the platform:
 
 ```bash
