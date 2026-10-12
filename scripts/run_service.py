@@ -46,6 +46,8 @@ def drop_privileges_after_reconciling_ownership(service_dir: Path) -> None:
         if path.exists():
             run_checked(["chown", "-R", f"{uid}:{gid}", str(path)], cwd=Path("/"))
     os.environ["HOME"] = platform_user.pw_dir
+    # Drop root's supplementary groups first; setgid/setuid alone leave them.
+    os.setgroups([])
     os.setgid(gid)
     os.setuid(uid)
 
