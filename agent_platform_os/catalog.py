@@ -19,12 +19,19 @@ class ServiceDefinition:
     requires_postgres: bool
     requires_redis: bool
     description: str
+    ref: str = "main"
+    """Git ref (commit SHA, tag, or branch) bootstrap checks out.
+
+    Pinned to a commit so deployments are reproducible; override per service
+    with the ``<SERVICE_NAME>_REF`` environment variable (e.g. ``SWARM_BUS_REF``).
+    """
 
 
 SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "async_mcp_gateway": ServiceDefinition(
         name="async_mcp_gateway",
         repository="https://github.com/fernandogarzaaa/async-mcp-gateway.git",
+        ref="f42e34d55a72787077da49bd395e515917c96007",
         checkout_path="services/async_mcp_gateway",
         port=8080,
         app_module="app.main:app",
@@ -36,6 +43,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "hydra_engine": ServiceDefinition(
         name="hydra_engine",
         repository="https://github.com/fernandogarzaaa/hydra-engine.git",
+        ref="14cb2b88e42f34793a8b0cd8d0e03bf266079cdb",
         checkout_path="services/hydra_engine",
         port=8081,
         app_module="app.main:app",
@@ -47,6 +55,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "synapse_mesh": ServiceDefinition(
         name="synapse_mesh",
         repository="https://github.com/fernandogarzaaa/SynapseMesh.git",
+        ref="1040a46efd5dfeeca24a10f513f1a481c5ce5b4e",
         checkout_path="services/synapse_mesh",
         port=8082,
         app_module="app.main:app",
@@ -58,6 +67,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "swarm_bus": ServiceDefinition(
         name="swarm_bus",
         repository="https://github.com/fernandogarzaaa/swarm-bus.git",
+        ref="35705f02bfea3f0ecd4f152eb8c9d24c9f511523",
         checkout_path="services/swarm_bus",
         port=8085,
         app_module="app.main:app",
@@ -69,6 +79,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "spatial_flux": ServiceDefinition(
         name="spatial_flux",
         repository="https://github.com/fernandogarzaaa/Spatial-Flux.git",
+        ref="5e0c19af99cff4f6f9b38beaff3d80fa62adc8de",
         checkout_path="services/spatial_flux",
         port=8084,
         app_module="app.main:app",
