@@ -31,7 +31,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "async_mcp_gateway": ServiceDefinition(
         name="async_mcp_gateway",
         repository="https://github.com/fernandogarzaaa/async-mcp-gateway.git",
-        ref="f42e34d55a72787077da49bd395e515917c96007",
+        ref="51500aad6fa3eaab10ca810bb25465c474c94fbd",  # v0.1.0
         checkout_path="services/async_mcp_gateway",
         port=8080,
         app_module="app.main:app",
@@ -79,7 +79,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "spatial_flux": ServiceDefinition(
         name="spatial_flux",
         repository="https://github.com/fernandogarzaaa/Spatial-Flux.git",
-        ref="5e0c19af99cff4f6f9b38beaff3d80fa62adc8de",
+        ref="0ab5ff2830d28262e1a40f9f573ea4336a2cc626",  # v1.0.0
         checkout_path="services/spatial_flux",
         port=8084,
         app_module="app.main:app",
