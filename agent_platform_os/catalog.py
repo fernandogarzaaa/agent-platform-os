@@ -43,7 +43,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "hydra_engine": ServiceDefinition(
         name="hydra_engine",
         repository="https://github.com/fernandogarzaaa/hydra-engine.git",
-        ref="14cb2b88e42f34793a8b0cd8d0e03bf266079cdb",
+        ref="82b7c088e9c23862600d3caa9dfdf7e913418f33",  # v0.1.1
         checkout_path="services/hydra_engine",
         port=8081,
         app_module="app.main:app",
@@ -55,7 +55,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "synapse_mesh": ServiceDefinition(
         name="synapse_mesh",
         repository="https://github.com/fernandogarzaaa/SynapseMesh.git",
-        ref="1040a46efd5dfeeca24a10f513f1a481c5ce5b4e",
+        ref="d4ba799087234d5795478e7600fd4085cca29ad2",  # v0.1.1
         checkout_path="services/synapse_mesh",
         port=8082,
         app_module="app.main:app",
@@ -67,7 +67,7 @@ SERVICE_DEFINITIONS: Final[dict[str, ServiceDefinition]] = {
     "swarm_bus": ServiceDefinition(
         name="swarm_bus",
         repository="https://github.com/fernandogarzaaa/swarm-bus.git",
-        ref="35705f02bfea3f0ecd4f152eb8c9d24c9f511523",
+        ref="658d9c13ec11a1500b4e865364aa661690b97fa0",  # v0.1.0
         checkout_path="services/swarm_bus",
         port=8085,
         app_module="app.main:app",

@@ -38,7 +38,7 @@ services:
     networks:
       - platform_fabric
     ports:
-      - "5432:5432"
+      - "${PLATFORM_BIND_ADDRESS:-127.0.0.1}:5432:5432"
     environment:
       POSTGRES_USER: agent_platform
       POSTGRES_PASSWORD: agent_platform
@@ -58,7 +58,7 @@ services:
     networks:
       - platform_fabric
     ports:
-      - "6379:6379"
+      - "${PLATFORM_BIND_ADDRESS:-127.0.0.1}:6379:6379"
     command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
     volumes:
       - redis_stream_data:/data
@@ -81,7 +81,7 @@ services:
       - uv_cache:/var/cache/uv
       - ./services/async_mcp_gateway:/workspace:rw
     ports:
-      - "${GATEWAY_PORT:-8080}:8080"
+      - "${PLATFORM_BIND_ADDRESS:-127.0.0.1}:${GATEWAY_PORT:-8080}:8080"
     environment:
       SERVICE_NAME: async_mcp_gateway
       SERVICE_DIR: /workspace
@@ -125,11 +125,12 @@ services:
       - uv_cache:/var/cache/uv
       - ./services/hydra_engine:/workspace:rw
     ports:
-      - "${HYDRA_PORT:-8081}:8081"
+      - "${PLATFORM_BIND_ADDRESS:-127.0.0.1}:${HYDRA_PORT:-8081}:8081"
     environment:
       SERVICE_NAME: hydra_engine
       SERVICE_DIR: /workspace
       PORT: 8081
+      HYDRA_API_KEY: ${HYDRA_API_KEY:-}
       HYDRA_STATE_SCHEMA: ${HYDRA_STATE_SCHEMA:-hydra_state}
       EVENT_REPLAY_RETRY_LIMIT: ${EVENT_REPLAY_RETRY_LIMIT:-5}
       POSTGRES_PRIME_URL: postgresql://agent_platform:agent_platform@postgres_db:5432/agent_platform_os
@@ -181,11 +182,12 @@ services:
       - uv_cache:/var/cache/uv
       - ./services/synapse_mesh:/workspace:rw
     ports:
-      - "${SYNAPSE_PORT:-8082}:8082"
+      - "${PLATFORM_BIND_ADDRESS:-127.0.0.1}:${SYNAPSE_PORT:-8082}:8082"
     environment:
       SERVICE_NAME: synapse_mesh
       SERVICE_DIR: /workspace
       PORT: 8082
+      SYNAPSEMESH_API_KEY: ${SYNAPSEMESH_API_KEY:-}
       MODEL_CATALOG_PATH: ${MODEL_CATALOG_PATH:-}
       REDIS_STREAM_URL: redis://redis_broker:6379/0
     healthcheck:
@@ -205,11 +207,12 @@ services:
       - uv_cache:/var/cache/uv
       - ./services/swarm_bus:/workspace:rw
     ports:
-      - "${SWARMBUS_PORT:-8085}:8083"
+      - "${PLATFORM_BIND_ADDRESS:-127.0.0.1}:${SWARMBUS_PORT:-8085}:8083"
     environment:
       SERVICE_NAME: swarm_bus
       SERVICE_DIR: /workspace
       PORT: 8083
+      SWARMBUS_API_KEY: ${SWARMBUS_API_KEY:-}
       SWARMBUS_LOOP_DEPTH_LIMIT: ${SWARMBUS_LOOP_DEPTH_LIMIT:-32}
       LOCK_LEASE_TTL_MS: ${LOCK_LEASE_TTL_MS:-30000}
       REDIS_STREAM_URL: redis://redis_broker:6379/0
@@ -227,7 +230,7 @@ services:
       - uv_cache:/var/cache/uv
       - ./services/spatial_flux:/workspace:rw
     ports:
-      - "${SPATIAL_FLUX_PORT:-8084}:8084"
+      - "${PLATFORM_BIND_ADDRESS:-127.0.0.1}:${SPATIAL_FLUX_PORT:-8084}:8084"
     environment:
       SERVICE_NAME: spatial_flux
       SERVICE_DIR: /workspace
