@@ -174,3 +174,68 @@ def test_update_clones_a_missing_checkout_at_the_pin(
     root = tmp_path / "nested" / "platform"
     bootstrap.update_service(root, make_service(repo, first))
     assert git(root / "services/demo_svc", "rev-parse", "HEAD") == first
+
+
+ALIAS_VARS = (
+    "SWARMBUS_LOOP_DEPTH_LIMIT",
+    "LOCK_LEASE_TTL_MS",
+    "EVENT_REPLAY_RETRY_LIMIT",
+    "MAX_LOOP_DEPTH",
+    "LOCK_TTL_MS",
+    "MAX_STEP_RETRIES",
+)
+
+
+@pytest.fixture()
+def clean_alias_env(monkeypatch: pytest.MonkeyPatch) -> pytest.MonkeyPatch:
+    for name in ALIAS_VARS:
+        monkeypatch.delenv(name, raising=False)
+    return monkeypatch
+
+
+@pytest.mark.parametrize("service", ["swarm_bus", "synapse_mesh"])
+def test_platform_knobs_reach_bus_settings(
+    clean_alias_env: pytest.MonkeyPatch, service: str
+) -> None:
+    clean_alias_env.setenv("SWARMBUS_LOOP_DEPTH_LIMIT", "32")
+    clean_alias_env.setenv("LOCK_LEASE_TTL_MS", "30000")
+    run_service.apply_environment_aliases(service, 8083)
+    import os
+
+    assert os.environ["MAX_LOOP_DEPTH"] == "32"
+    assert os.environ["LOCK_TTL_MS"] == "30000"
+
+
+def test_retry_limit_reaches_hydra(clean_alias_env: pytest.MonkeyPatch) -> None:
+    clean_alias_env.setenv("EVENT_REPLAY_RETRY_LIMIT", "5")
+    run_service.apply_environment_aliases("hydra_engine", 8081)
+    import os
+
+    assert os.environ["MAX_STEP_RETRIES"] == "5"
+    assert "MAX_LOOP_DEPTH" not in os.environ
+
+
+def test_explicit_service_setting_wins_over_platform_alias(
+    clean_alias_env: pytest.MonkeyPatch,
+) -> None:
+    clean_alias_env.setenv("SWARMBUS_LOOP_DEPTH_LIMIT", "32")
+    clean_alias_env.setenv("MAX_LOOP_DEPTH", "8")
+    run_service.apply_environment_aliases("swarm_bus", 8083)
+    import os
+
+    assert os.environ["MAX_LOOP_DEPTH"] == "8"
+
+
+def test_compose_publishes_ports_on_loopback_by_default() -> None:
+    compose = (Path(__file__).resolve().parents[1] / "docker-compose.yml").read_text()
+    published = [
+        line.strip()
+        for line in compose.splitlines()
+        if line.strip().startswith('- "')
+        and line.strip().endswith('"')
+        and ":" in line
+        and "/" not in line
+    ]
+    assert published, "expected published ports in docker-compose.yml"
+    for line in published:
+        assert line.startswith('- "${PLATFORM_BIND_ADDRESS:-127.0.0.1}:'), line

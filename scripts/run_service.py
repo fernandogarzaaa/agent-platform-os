@@ -52,6 +52,19 @@ def drop_privileges_after_reconciling_ownership(service_dir: Path) -> None:
     os.setuid(uid)
 
 
+SERVICE_SETTING_ALIASES: dict[str, tuple[tuple[str, str], ...]] = {
+    "swarm_bus": (
+        ("SWARMBUS_LOOP_DEPTH_LIMIT", "MAX_LOOP_DEPTH"),
+        ("LOCK_LEASE_TTL_MS", "LOCK_TTL_MS"),
+    ),
+    "synapse_mesh": (
+        ("SWARMBUS_LOOP_DEPTH_LIMIT", "MAX_LOOP_DEPTH"),
+        ("LOCK_LEASE_TTL_MS", "LOCK_TTL_MS"),
+    ),
+    "hydra_engine": (("EVENT_REPLAY_RETRY_LIMIT", "MAX_STEP_RETRIES"),),
+}
+
+
 def apply_environment_aliases(service_name: str, port: int) -> None:
     """Expose root environment variables under common service-specific aliases."""
     os.environ.setdefault("APP_HOST", "0.0.0.0")
@@ -68,6 +81,15 @@ def apply_environment_aliases(service_name: str, port: int) -> None:
     if redis_url:
         os.environ.setdefault("REDIS_URL", redis_url)
         os.environ.setdefault("REDIS_URI", redis_url)
+
+    # Platform-level knobs -> the setting names each service actually reads.
+    # Without these, SWARMBUS_LOOP_DEPTH_LIMIT / LOCK_LEASE_TTL_MS /
+    # EVENT_REPLAY_RETRY_LIMIT from docker-compose were silently ignored and the
+    # services ran on their built-in defaults.
+    for source, target in SERVICE_SETTING_ALIASES.get(service_name, ()):
+        value = os.environ.get(source)
+        if value:
+            os.environ.setdefault(target, value)
 
     if service_name == "spatial_flux":
         os.environ.setdefault(

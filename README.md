@@ -196,6 +196,16 @@ OpenAI-compatible model endpoint for real model calls.
 | `swarm_bus` | `8085` | `swarm_bus` |
 | `spatial_flux` | `8084` | `spatial_flux` |
 
+All host ports are published on `PLATFORM_BIND_ADDRESS` (default `127.0.0.1`), so the
+default-password Postgres, the unauthenticated Redis and the service APIs are not reachable
+from other machines. Set `PLATFORM_BIND_ADDRESS=0.0.0.0` only behind a firewall or reverse
+proxy, and set `HYDRA_API_KEY`, `SYNAPSEMESH_API_KEY` and `SWARMBUS_API_KEY` when you do.
+
+The launcher maps the platform knobs onto each service's own settings:
+`SWARMBUS_LOOP_DEPTH_LIMIT` -> `MAX_LOOP_DEPTH` and `LOCK_LEASE_TTL_MS` -> `LOCK_TTL_MS`
+(swarm_bus, synapse_mesh), `EVENT_REPLAY_RETRY_LIMIT` -> `MAX_STEP_RETRIES` (hydra_engine).
+A service-specific variable that is already set wins.
+
 ## Validation Commands
 
 ```bash
